@@ -242,6 +242,76 @@
             font-size: 14px;
         }
 
+        /* 訂餐資訊表單 */
+        .order-form {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 20px;
+            margin: 15px 0;
+        }
+
+        .form-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: #d63031;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .dining-options {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+
+        .dining-btn {
+            padding: 12px 20px;
+            border: 2px solid #e0e0e0;
+            background: white;
+            border-radius: 8px;
+            font-size: 15px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .dining-btn:hover {
+            border-color: #d63031;
+            background: #fff5f5;
+        }
+
+        .dining-btn.active {
+            background: #d63031;
+            color: white;
+            border-color: #d63031;
+        }
+
+        .form-input {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .form-input:focus {
+            outline: none;
+            border-color: #d63031;
+            background: #fff5f5;
+        }
+
+        .form-input::placeholder {
+            color: #999;
+        }
+
         @media (max-width: 480px) {
             .header h1 {
                 font-size: 24px;
@@ -393,14 +463,49 @@
                 <span>總計 / Total</span>
                 <span id="totalPrice">NT$ 0</span>
             </div>
+            
+            <!-- 訂餐資訊表單 -->
+            <div class="order-form" id="orderForm" style="display: none;">
+                <div class="form-title">👤 訂餐人資訊</div>
+                
+                <div class="form-group">
+                    <div class="dining-options">
+                        <button type="button" class="dining-btn active" onclick="selectDining('內用')">
+                            🍽️ 內用
+                        </button>
+                        <button type="button" class="dining-btn" onclick="selectDining('外帶')">
+                            📦 外帶
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <input type="text" id="customerName" class="form-input" placeholder="請輸入姓名" required>
+                </div>
+                
+                <div class="form-group">
+                    <input type="tel" id="customerPhone" class="form-input" placeholder="請輸入電話" required>
+                </div>
+            </div>
+            
             <button class="order-btn" id="orderBtn" onclick="sendOrder()" disabled>
-                📲 傳送訂單到 LINE / Send Order
+                📲 發送到LINE / Send Order
             </button>
         </div>
     </div>
 
     <script>
         let cart = {};
+        let selectedDining = '內用'; // 預設為內用
+
+        function selectDining(type) {
+            selectedDining = type;
+            // 更新按鈕狀態
+            document.querySelectorAll('.dining-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
 
         function updateQuantity(itemName, price, change) {
             if (!cart[itemName]) {
@@ -425,6 +530,7 @@
             const cartItemsDiv = document.getElementById('cartItems');
             const totalPriceSpan = document.getElementById('totalPrice');
             const orderBtn = document.getElementById('orderBtn');
+            const orderForm = document.getElementById('orderForm');
 
             let total = 0;
             let html = '';
@@ -432,6 +538,7 @@
             if (Object.keys(cart).length === 0) {
                 html = '<div class="empty-cart">尚未選擇餐點 / No items selected</div>';
                 orderBtn.disabled = true;
+                orderForm.style.display = 'none';
             } else {
                 for (let itemName in cart) {
                     const item = cart[itemName];
@@ -445,6 +552,7 @@
                     `;
                 }
                 orderBtn.disabled = false;
+                orderForm.style.display = 'block'; // 顯示表單
             }
 
             cartItemsDiv.innerHTML = html;
@@ -457,6 +565,23 @@
                 return;
             }
 
+            // 取得表單資料
+            const customerName = document.getElementById('customerName').value.trim();
+            const customerPhone = document.getElementById('customerPhone').value.trim();
+
+            // 驗證表單
+            if (!customerName) {
+                alert('請輸入姓名！\nPlease enter your name!');
+                document.getElementById('customerName').focus();
+                return;
+            }
+
+            if (!customerPhone) {
+                alert('請輸入電話！\nPlease enter your phone number!');
+                document.getElementById('customerPhone').focus();
+                return;
+            }
+
             // 取得當前日期時間
             const now = new Date();
             const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
@@ -466,12 +591,12 @@
             let total = 0;
             let totalItems = 0;
             
-            // 建立訂單訊息 - 新格式
+            // 建立訂單訊息 - 帶入表單資料
             let orderText = '📋 姊妹小吃訂單\n\n';
             orderText += `🕐 訂單時間：${dateStr} ${timeStr}\n`;
-            orderText += '📍 用餐方式：(請填寫 🍽️內用 或 📦外帶)\n';
-            orderText += '👤 顧客姓名：(請填寫)\n';
-            orderText += '📞 聯絡電話：(請填寫)\n\n';
+            orderText += `📍 用餐方式：${selectedDining === '內用' ? '🍽️ 內用' : '📦 外帶'}\n`;
+            orderText += `👤 顧客姓名：${customerName}\n`;
+            orderText += `📞 聯絡電話：${customerPhone}\n\n`;
             
             orderText += '🍜 餐點明細：\n';
             for (let itemName in cart) {
@@ -484,7 +609,7 @@
             
             orderText += `\n📊 商品數量統計：共 ${totalItems} 項\n`;
             orderText += `💰 總金額：${total}\n\n`;
-            orderText += '🏪 內用桌號：(內用時請現場安排)\n';
+            orderText += selectedDining === '內用' ? '🏪 內用桌號：請現場安排\n' : '';
             orderText += '✅ 請確認訂單並回覆預計完成時間\n';
             orderText += '❌ 如有問題請直接回覆說明';
 

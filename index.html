@@ -365,6 +365,152 @@
                 font-size: 18px;
             }
         }
+
+        /* 訂單歷史按鈕 */
+        .history-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border-radius: 50%;
+            border: none;
+            color: white;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+            transition: all 0.3s;
+            z-index: 1000;
+        }
+
+        .history-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 6px 20px rgba(245, 87, 108, 0.6);
+        }
+
+        .history-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 訂單歷史彈窗 */
+        .history-modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .history-modal.show {
+            display: flex;
+        }
+
+        .history-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 80vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+        }
+
+        .history-header {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 20px 20px 0 0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .history-header h2 {
+            margin: 0;
+            font-size: 20px;
+        }
+
+        .close-btn {
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .close-btn:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .history-body {
+            padding: 20px;
+        }
+
+        .history-item {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 15px;
+            margin-bottom: 15px;
+            border-left: 4px solid #f5576c;
+        }
+
+        .history-time {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 8px;
+        }
+
+        .history-details {
+            font-size: 14px;
+            line-height: 1.6;
+            color: #333;
+        }
+
+        .history-total {
+            font-weight: bold;
+            color: #f5576c;
+            margin-top: 8px;
+            font-size: 16px;
+        }
+
+        .empty-history {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-history-icon {
+            font-size: 48px;
+            margin-bottom: 10px;
+        }
+
+        .reorder-btn {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            font-size: 13px;
+            cursor: pointer;
+            margin-top: 10px;
+            transition: all 0.3s;
+        }
+
+        .reorder-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -479,17 +625,11 @@
                 <div class="category-title">🥟 來點止餓 / "Snacks"</div>
                 <div class="menu-item">
                     <div class="menu-item-content">
-                        <img src="images/soup-dumplings.jpg" alt="特調鮮肉小湯包" class="item-image">
                         <div class="item-info">
-                            <div class="item-name">特調鮮肉小湯包</div>
-                            <div class="item-name-en">Signature Pork Soup Dumplings</div>
-                            <div class="item-price">NT$ 100</div>
+                            <div class="item-name" style="color: #999; text-decoration: line-through;">特調鮮肉小湯包</div>
+                            <div class="item-name-en" style="color: #999;">Signature Pork Soup Dumplings</div>
+                            <div class="item-price" style="color: #999;">暫不供應 / Temporarily Unavailable</div>
                         </div>
-                    </div>
-                    <div class="quantity-control">
-                        <button class="quantity-btn" onclick="updateQuantity('特調鮮肉小湯包', 100, -1)">−</button>
-                        <div class="quantity-display" id="qty-特調鮮肉小湯包">0</div>
-                        <button class="quantity-btn" onclick="updateQuantity('特調鮮肉小湯包', 100, 1)">+</button>
                     </div>
                 </div>
             </div>
@@ -526,6 +666,18 @@
                 <div class="form-group">
                     <input type="tel" id="customerPhone" class="form-input" placeholder="請輸入電話" required>
                 </div>
+
+                <div class="form-group">
+                    <select id="pickupTime" class="form-input">
+                        <option value="立即取餐">⚡ 立即取餐 (盡快準備)</option>
+                        <option value="15分鐘後">🕐 15 分鐘後</option>
+                        <option value="30分鐘後">🕑 30 分鐘後</option>
+                        <option value="45分鐘後">🕒 45 分鐘後</option>
+                        <option value="1小時後">🕓 1 小時後</option>
+                        <option value="1.5小時後">🕔 1.5 小時後</option>
+                        <option value="2小時後">🕕 2 小時後</option>
+                    </select>
+                </div>
             </div>
             
             <button class="order-btn" id="orderBtn" onclick="sendOrder()" disabled>
@@ -538,6 +690,27 @@
         </div>
     </div>
 
+    <!-- 訂單歷史按鈕 -->
+    <button class="history-btn" onclick="toggleHistory()" title="訂單歷史">
+        📋
+    </button>
+
+    <!-- 訂單歷史彈窗 -->
+    <div class="history-modal" id="historyModal">
+        <div class="history-content">
+            <div class="history-header">
+                <h2>📋 訂單歷史</h2>
+                <button class="close-btn" onclick="toggleHistory()">✕</button>
+            </div>
+            <div class="history-body" id="historyBody">
+                <div class="empty-history">
+                    <div class="empty-history-icon">🍜</div>
+                    <p>尚無訂單記錄</p>
+                    <p style="font-size: 12px;">完成訂單後將顯示在這裡</p>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <script>
         // ============================================
@@ -550,11 +723,15 @@
         let cart = {};
         let selectedDining = '內用'; // 預設為內用
 
+        // 訂單歷史（使用 LocalStorage 儲存）
+        let orderHistory = [];
+
         // ============================================
         // 頁面載入時初始化
         // ============================================
         window.addEventListener('load', function() {
             initializeLIFF();
+            loadOrderHistory(); // 載入訂單歷史
             updateCartDisplay();
         });
 
@@ -678,6 +855,7 @@
             // 取得表單資料
             const customerName = document.getElementById('customerName').value.trim();
             const customerPhone = document.getElementById('customerPhone').value.trim();
+            const pickupTime = document.getElementById('pickupTime').value;
 
             // 驗證表單
             if (!customerName) {
@@ -705,6 +883,7 @@
             let orderText = '📋 姊妹小吃訂單\n\n';
             orderText += `🕐 訂單時間：${dateStr} ${timeStr}\n`;
             orderText += `📍 用餐方式：${selectedDining === '內用' ? '🍽️ 內用' : '📦 外帶'}\n`;
+            orderText += `⏰ 取餐時間：${pickupTime}\n`;
             orderText += `👤 顧客姓名：${customerName}\n`;
             orderText += `📞 聯絡電話：${customerPhone}\n\n`;
             
@@ -720,8 +899,6 @@
             orderText += `\n📊 商品數量統計：共 ${totalItems} 項\n`;
             orderText += `💰 總金額：${total}\n\n`;
             orderText += selectedDining === '內用' ? '🏪 內用桌號：請現場安排\n' : '';
-            orderText += '✅ 請確認訂單並回覆預計完成時間\n';
-            orderText += '❌ 如有問題請直接回覆說明';
 
             // 使用 LIFF 發送訊息（如果可用）
             if (liffReady && liff.isInClient()) {
@@ -731,11 +908,25 @@
                         text: orderText
                     }]);
                     
+                    // 儲存訂單到歷史記錄
+                    saveOrderToHistory({
+                        date: dateStr,
+                        time: timeStr,
+                        dining: selectedDining,
+                        pickupTime: pickupTime,
+                        name: customerName,
+                        phone: customerPhone,
+                        items: {...cart},
+                        total: total,
+                        totalItems: totalItems
+                    });
+                    
                     // 清空購物車和表單
                     cart = {};
                     updateCartDisplay();
                     document.getElementById('customerName').value = '';
                     document.getElementById('customerPhone').value = '';
+                    document.getElementById('pickupTime').selectedIndex = 0;
                     
                     alert('✅ 訂單已成功發送！\n我們會盡快為您準備餐點。');
                     
@@ -757,6 +948,110 @@
         function fallbackToOAMessage(orderText) {
             const lineUrl = `https://line.me/R/oaMessage/@sister666/?${encodeURIComponent(orderText)}`;
             window.location.href = lineUrl;
+        }
+
+        // ============================================
+        // 訂單歷史管理
+        // ============================================
+        function loadOrderHistory() {
+            const stored = localStorage.getItem('jiemeiOrderHistory');
+            if (stored) {
+                try {
+                    orderHistory = JSON.parse(stored);
+                } catch (e) {
+                    orderHistory = [];
+                }
+            }
+        }
+
+        function saveOrderToHistory(order) {
+            orderHistory.unshift(order); // 新訂單加到最前面
+            
+            // 只保留最近 20 筆訂單
+            if (orderHistory.length > 20) {
+                orderHistory = orderHistory.slice(0, 20);
+            }
+            
+            localStorage.setItem('jiemeiOrderHistory', JSON.stringify(orderHistory));
+        }
+
+        function toggleHistory() {
+            const modal = document.getElementById('historyModal');
+            modal.classList.toggle('show');
+            
+            if (modal.classList.contains('show')) {
+                displayOrderHistory();
+            }
+        }
+
+        function displayOrderHistory() {
+            const historyBody = document.getElementById('historyBody');
+            
+            if (orderHistory.length === 0) {
+                historyBody.innerHTML = `
+                    <div class="empty-history">
+                        <div class="empty-history-icon">🍜</div>
+                        <p>尚無訂單記錄</p>
+                        <p style="font-size: 12px;">完成訂單後將顯示在這裡</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            let html = '';
+            orderHistory.forEach((order, index) => {
+                let itemsText = '';
+                for (let itemName in order.items) {
+                    const item = order.items[itemName];
+                    itemsText += `${itemName} × ${item.quantity}<br>`;
+                }
+                
+                html += `
+                    <div class="history-item">
+                        <div class="history-time">📅 ${order.date} ${order.time}</div>
+                        <div class="history-details">
+                            <strong>${order.dining === '內用' ? '🍽️ 內用' : '📦 外帶'}</strong> | ⏰ ${order.pickupTime}<br>
+                            👤 ${order.name} | 📞 ${order.phone}<br>
+                            <br>
+                            ${itemsText}
+                        </div>
+                        <div class="history-total">💰 總計：NT$ ${order.total} (${order.totalItems} 項)</div>
+                        <button class="reorder-btn" onclick="reorder(${index})">🔄 再來一單</button>
+                    </div>
+                `;
+            });
+            
+            historyBody.innerHTML = html;
+        }
+
+        function reorder(index) {
+            const order = orderHistory[index];
+            
+            // 清空現有購物車
+            cart = {};
+            
+            // 重新加入歷史訂單的品項
+            for (let itemName in order.items) {
+                cart[itemName] = {
+                    quantity: order.items[itemName].quantity,
+                    price: order.items[itemName].price
+                };
+            }
+            
+            // 更新顯示
+            updateCartDisplay();
+            
+            // 自動填入顧客資訊
+            document.getElementById('customerName').value = order.name;
+            document.getElementById('customerPhone').value = order.phone;
+            
+            // 關閉歷史視窗
+            toggleHistory();
+            
+            // 滾動到購物車區域
+            document.querySelector('.cart-summary').scrollIntoView({ behavior: 'smooth' });
+            
+            alert('✅ 已載入歷史訂單！\n請確認餐點並選擇取餐時間。');
         }
     </script>
 </body>

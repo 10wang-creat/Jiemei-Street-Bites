@@ -457,17 +457,36 @@
                 return;
             }
 
-            let orderText = '【姊妹小吃 訂單 / Jiemei Street Bites Order】\n\n';
-            let total = 0;
+            // 取得當前日期時間
+            const now = new Date();
+            const dateStr = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+            const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
 
+            // 計算總計和商品數量
+            let total = 0;
+            let totalItems = 0;
+            
+            // 建立訂單訊息 - 新格式
+            let orderText = '📋 姊妹小吃訂單\n\n';
+            orderText += `🕐 訂單時間：${dateStr} ${timeStr}\n`;
+            orderText += '📍 用餐方式：(請填寫 🍽️內用 或 📦外帶)\n';
+            orderText += '👤 顧客姓名：(請填寫)\n';
+            orderText += '📞 聯絡電話：(請填寫)\n\n';
+            
+            orderText += '🍜 餐點明細：\n';
             for (let itemName in cart) {
                 const item = cart[itemName];
                 const subtotal = item.quantity * item.price;
                 total += subtotal;
-                orderText += `${itemName} × ${item.quantity} = NT$ ${subtotal}\n`;
+                totalItems += item.quantity;
+                orderText += `• ${itemName} × ${item.quantity} = ${subtotal}\n`;
             }
-
-            orderText += `\n總計 / Total：NT$ ${total}`;
+            
+            orderText += `\n📊 商品數量統計：共 ${totalItems} 項\n`;
+            orderText += `💰 總金額：${total}\n\n`;
+            orderText += '🏪 內用桌號：(內用時請現場安排)\n';
+            orderText += '✅ 請確認訂單並回覆預計完成時間\n';
+            orderText += '❌ 如有問題請直接回覆說明';
 
             // 產生 LINE 連結
             const lineUrl = `https://line.me/R/oaMessage/@sister666/?${encodeURIComponent(orderText)}`;

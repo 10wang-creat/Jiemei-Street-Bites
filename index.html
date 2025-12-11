@@ -4,6 +4,8 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>姊妹小吃店 - 線上點餐</title>
+    <!-- LIFF SDK -->
+    <script charset="utf-8" src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
     <style>
         * {
             margin: 0;
@@ -527,15 +529,76 @@
             </div>
             
             <button class="order-btn" id="orderBtn" onclick="sendOrder()" disabled>
-                📲 發送到LINE / Send Order
+                📲 開啟LINE發送訂單 / Open LINE to Send
             </button>
+            <div style="text-align: center; margin-top: 10px; font-size: 12px; color: #666;">
+                點擊後將開啟 LINE，訂單內容已自動填入<br>
+                只需在 LINE 中按「傳送」即可完成 ✓
+            </div>
         </div>
     </div>
 
+
     <script>
+        // ============================================
+        // LIFF 設定 - v4.0 自動發送版本
+        // ============================================
+        const LIFF_ID = '2008677661-kUyjk3rT';
+        let liffReady = false;
+
+        // 購物車
         let cart = {};
         let selectedDining = '內用'; // 預設為內用
 
+        // ============================================
+        // 頁面載入時初始化
+        // ============================================
+        window.addEventListener('load', function() {
+            initializeLIFF();
+            updateCartDisplay();
+        });
+
+        // ============================================
+        // LIFF 初始化
+        // ============================================
+        async function initializeLIFF() {
+            try {
+                await liff.init({ liffId: LIFF_ID });
+                liffReady = true;
+                console.log('✅ LIFF 初始化成功');
+                
+                // 如果用戶未登入，引導登入
+                if (!liff.isLoggedIn()) {
+                    liff.login();
+                } else {
+                    // 自動填入用戶名稱
+                    await autoFillUserName();
+                }
+            } catch (error) {
+                console.error('❌ LIFF 初始化失敗:', error);
+                liffReady = false;
+                // 降級為一般網頁模式
+            }
+        }
+
+        // ============================================
+        // 自動填入 LINE 用戶名稱
+        // ============================================
+        async function autoFillUserName() {
+            try {
+                const profile = await liff.getProfile();
+                const nameInput = document.getElementById('customerName');
+                if (nameInput && !nameInput.value) {
+                    nameInput.value = profile.displayName;
+                }
+            } catch (error) {
+                console.error('無法取得用戶資料:', error);
+            }
+        }
+
+        // ============================================
+        // 用餐方式選擇
+        // ============================================
         function selectDining(type) {
             selectedDining = type;
             // 更新按鈕狀態
@@ -545,6 +608,9 @@
             event.target.classList.add('active');
         }
 
+        // ============================================
+        // 更新商品數量
+        // ============================================
         function updateQuantity(itemName, price, change) {
             if (!cart[itemName]) {
                 cart[itemName] = { quantity: 0, price: price };
@@ -564,6 +630,9 @@
             updateCartDisplay();
         }
 
+        // ============================================
+        // 更新購物車顯示
+        // ============================================
         function updateCartDisplay() {
             const cartItemsDiv = document.getElementById('cartItems');
             const totalPriceSpan = document.getElementById('totalPrice');
@@ -590,14 +659,17 @@
                     `;
                 }
                 orderBtn.disabled = false;
-                orderForm.style.display = 'block'; // 顯示表單
+                orderForm.style.display = 'block';
             }
 
             cartItemsDiv.innerHTML = html;
             totalPriceSpan.textContent = `NT$ ${total}`;
         }
 
-        function sendOrder() {
+        // ============================================
+        // 發送訂單（LIFF 自動發送 + 降級機制）
+        // ============================================
+        async function sendOrder() {
             if (Object.keys(cart).length === 0) {
                 alert('請先選擇餐點！/ Please select items first!');
                 return;
@@ -629,7 +701,7 @@
             let total = 0;
             let totalItems = 0;
             
-            // 建立訂單訊息 - 帶入表單資料
+            // 建立訂單訊息
             let orderText = '📋 姊妹小吃訂單\n\n';
             orderText += `🕐 訂單時間：${dateStr} ${timeStr}\n`;
             orderText += `📍 用餐方式：${selectedDining === '內用' ? '🍽️ 內用' : '📦 外帶'}\n`;
@@ -651,10 +723,39 @@
             orderText += '✅ 請確認訂單並回覆預計完成時間\n';
             orderText += '❌ 如有問題請直接回覆說明';
 
-            // 產生 LINE 連結
+            // 使用 LIFF 發送訊息（如果可用）
+            if (liffReady && liff.isInClient()) {
+                try {
+                    await liff.sendMessages([{
+                        type: 'text',
+                        text: orderText
+                    }]);
+                    
+                    // 清空購物車和表單
+                    cart = {};
+                    updateCartDisplay();
+                    document.getElementById('customerName').value = '';
+                    document.getElementById('customerPhone').value = '';
+                    
+                    alert('✅ 訂單已成功發送！\n我們會盡快為您準備餐點。');
+                    
+                    // 關閉 LIFF 視窗
+                    liff.closeWindow();
+                } catch (error) {
+                    console.error('LIFF 發送失敗，使用降級方案:', error);
+                    fallbackToOAMessage(orderText);
+                }
+            } else {
+                // 降級方案：使用傳統 oaMessage 方式
+                fallbackToOAMessage(orderText);
+            }
+        }
+
+        // ============================================
+        // 降級方案：傳統 oaMessage 方式
+        // ============================================
+        function fallbackToOAMessage(orderText) {
             const lineUrl = `https://line.me/R/oaMessage/@sister666/?${encodeURIComponent(orderText)}`;
-            
-            // 開啟 LINE
             window.location.href = lineUrl;
         }
     </script>
